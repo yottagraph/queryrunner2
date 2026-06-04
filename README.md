@@ -1,6 +1,6 @@
-# QueryRunner
+# Query Runner 2
 
-Aether app: QueryRunner
+Aether app: Query Runner 2
 
 ## Quick Start
 

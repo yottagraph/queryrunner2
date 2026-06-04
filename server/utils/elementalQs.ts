@@ -28,8 +28,10 @@
  */
 
 interface QsConfig {
-    base: string; // `${gatewayUrl}/api/qs/${orgId}`
+    base: string; // proxy: `${gatewayUrl}/api/qs/${orgId}`; direct: the in-cluster serving address
     apiKey: string;
+    // true = direct in-cluster call (M2M bearer); false = Portal proxy (X-Api-Key)
+    direct: boolean;
 }
 
 /** Schema property/flavor, with all ids kept as strings. */
@@ -66,14 +68,31 @@ export interface LinkedResult {
     sampleNeids: string[];
 }
 
-/** Whether the QS proxy is configured for this tenant (gateway + org + key). */
+// True when the QS should be called directly (SSR → in-cluster serving address +
+// M2M bearer) rather than through the Portal proxy: an in-cluster
+// `*.svc.cluster.local` address, or an explicit `queryServerDirect` override.
+export function isQsDirect(): boolean {
+    const pub = (useRuntimeConfig().public ?? {}) as Record<string, unknown>;
+    const addr = String(pub.queryServerAddress ?? '');
+    if (!addr) return false;
+    const explicit = pub.queryServerDirect === true || pub.queryServerDirect === 'true';
+    return explicit || /\.svc(\.cluster\.local)?(:\d+)?\/?$/.test(addr);
+}
+
+/** Whether the QS is reachable — direct in-cluster, or via the Portal proxy (gateway + org + key). */
 export function isQsConfigured(): boolean {
     const pub = (useRuntimeConfig().public ?? {}) as Record<string, unknown>;
-    return Boolean(pub.gatewayUrl && pub.tenantOrgId && pub.qsApiKey);
+    return isQsDirect() || Boolean(pub.gatewayUrl && pub.tenantOrgId && pub.qsApiKey);
 }
 
 function qsConfig(): QsConfig {
     const pub = (useRuntimeConfig().public ?? {}) as Record<string, string>;
+
+    // Direct: target the in-cluster address; the M2M bearer is attached in qsFetch.
+    if (isQsDirect()) {
+        return { base: pub.queryServerAddress.replace(/\/$/, ''), apiKey: '', direct: true };
+    }
+
     const gatewayUrl = pub.gatewayUrl;
     const orgId = pub.tenantOrgId;
     const apiKey = pub.qsApiKey;
@@ -85,7 +104,7 @@ function qsConfig(): QsConfig {
                 'Guard server routes with isQsConfigured() and degrade gracefully.',
         });
     }
-    return { base: `${gatewayUrl}/api/qs/${orgId}`, apiKey };
+    return { base: `${gatewayUrl}/api/qs/${orgId}`, apiKey, direct: false };
 }
 
 /**
@@ -101,10 +120,16 @@ async function qsFetch(
     endpoint: string,
     init: { method?: string; body?: BodyInit; headers?: Record<string, string> } = {}
 ): Promise<unknown> {
-    const { base, apiKey } = qsConfig();
+    const { base, apiKey, direct } = qsConfig();
+    // Direct: M2M bearer; proxy: the QS proxy's X-Api-Key.
+    let authHeaders: Record<string, string> = { 'X-Api-Key': apiKey };
+    if (direct) {
+        const token = await getM2mToken();
+        authHeaders = token ? { Authorization: `Bearer ${token}` } : {};
+    }
     const text = await $fetch<string>(`${base}/${endpoint.replace(/^\//, '')}`, {
         method: (init.method as any) ?? 'GET',
-        headers: { 'X-Api-Key': apiKey, ...(init.headers ?? {}) },
+        headers: { ...authHeaders, ...(init.headers ?? {}) },
         body: init.body,
         responseType: 'text',
     });

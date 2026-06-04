@@ -1,8 +1,8 @@
 {
-  "name": "queryrunner",
-  "productName": "QueryRunner",
+  "name": "queryrunner2",
+  "productName": "Query Runner 2",
   "version": "2.0.0",
-  "description": "Aether app: QueryRunner",
+  "description": "Aether app: Query Runner 2",
   "scripts": {
     "predev": "test -f .env || node init-project.js --local",
     "dev": "nuxt dev",
@@ -14,8 +14,6 @@
     "preview": "nuxt preview",
     "format": "prettier --write \"**/*.{js,ts,vue,json,md}\" --ignore-path .gitignore --ignore-path .prettierignore",
     "format:check": "prettier --check \"**/*.{js,ts,vue,json,md}\" --ignore-path .gitignore --ignore-path .prettierignore",
-    "test": "vitest run",
-    "test:watch": "vitest",
     "postinstall": "npx nuxi prepare",
     "prepare": "husky"
   },
@@ -60,7 +58,6 @@
     "sass": "^1.84.0",
     "typescript": "^5.7.3",
     "vercel": "^50.13.2",
-    "vitest": "^2.1.9",
     "vue": "^3.5.14",
     "vue-router": "^4.5.1",
     "vuetify-nuxt-module": "^0.18.6"
