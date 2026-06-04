@@ -3,32 +3,32 @@
    ============================================= */
 :root {
     /* Core Palette */
-    --lv-black: #0a0a0a;
+    --lv-black: #0A0A0A;
     --lv-surface: #141414;
-    --lv-surface-light: #1e1e1e;
-    --lv-white: #ffffff;
+    --lv-surface-light: #1E1E1E;
+    --lv-white: #FFFFFF;
     --lv-silver: #757575;
 
     /* Primary: Cyber Green */
-    --lv-green: #3fea00;
-    --lv-green-dim: #30bc00;
-    --lv-green-light: #57ff19;
+    --lv-green: #3FEA00;
+    --lv-green-dim: #30BC00;
+    --lv-green-light: #57FF19;
 
     /* Secondary: Blaze Orange */
-    --lv-orange: #ff5c00;
-    --lv-orange-dim: #d04e02;
+    --lv-orange: #FF5C00;
+    --lv-orange-dim: #D04E02;
 
     /* Accent: Electric Blue */
-    --lv-blue: #003bff;
-    --lv-blue-dim: #0230d0;
-    --lv-blue-light: #2e5dff;
+    --lv-blue: #003BFF;
+    --lv-blue-dim: #0230D0;
+    --lv-blue-light: #2E5DFF;
 
     /* Semantic */
-    --lv-yellow: #ff9f0a;
+    --lv-yellow: #FF9F0A;
 
     /* Finance blue */
-    --lv-finance-blue: #003bff;
-    --lv-finance-blue-dim: #0230d0;
+    --lv-finance-blue: #003BFF;
+    --lv-finance-blue-dim: #0230D0;
 
     /* Typography */
     --font-primary: 'FK Grotesk', 'Inter', system-ui, -apple-system, sans-serif;
@@ -58,22 +58,18 @@ body {
 }
 
 /* Typography Hierarchy (Brand R2) */
-h1,
-.headline {
+h1, .headline {
     font-family: var(--font-headline);
     font-weight: 400;
 }
 
-h2,
-h3,
-.subheader {
+h2, h3, .subheader {
     font-family: var(--font-headline);
     font-weight: 400;
 }
 
 /* Buttons & UI Elements */
-.btn-text,
-.ui-label {
+.btn-text, .ui-label {
     font-family: var(--font-mono);
     text-transform: uppercase;
     letter-spacing: 0.05em;
@@ -110,9 +106,7 @@ h3,
 }
 
 /* Code/Data styling */
-code,
-pre,
-.code {
+code, pre, .code {
     font-family: var(--font-mono);
     background: var(--lv-surface);
     border-radius: 4px;
@@ -130,8 +124,7 @@ pre {
 }
 
 /* Global app height constraints for proper internal scrolling */
-html,
-body {
+html, body {
     height: 100%;
     overflow: hidden;
 }

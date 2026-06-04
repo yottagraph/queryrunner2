@@ -1,8 +1,8 @@
 {
-  "name": "queryrunner2",
-  "productName": "Query Runner 2",
+  "name": "aether",
+  "productName": "Aether",
   "version": "2.0.0",
-  "description": "Aether app: Query Runner 2",
+  "description": "Build Lovelace AI applications in minutes, not days. A production-ready modular framework with event-driven architecture.",
   "scripts": {
     "predev": "test -f .env || node init-project.js --local",
     "dev": "nuxt dev",
