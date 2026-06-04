@@ -327,17 +327,6 @@ jobs:
             # `runner` field stays in the schema as the extension point
             # if a third substrate ever lands (see ADR-019 item 1).
 
-            # Resolve cluster coordinates, with a short bounded retry on the
-            # provisioning race (ENG-898). On a fresh tenant this workflow is
-            # dispatched (by auto-deploy-jobs.yml, on the build agent's
-            # `jobs/**` push) ~15-18 min BEFORE the provisioning tf-apply
-            # lands the per-tenant GKE cluster — so connect-gateway 409s
-            # ("substrate not ready") until the apply writes the project
-            # coords back. We retry a handful of times to absorb sub-2-minute
-            # races; if it's still not ready we exit cleanly knowing the
-            # Portal re-dispatches this workflow automatically once the infra
-            # is ready (tryTriggerPendingJobDeploys). A 404 / 5xx / network
-            # error is NOT the race and fails fast.
             - name: Resolve cluster coordinates from Portal (k8s_job)
               if: steps.manifest.outputs.runner == 'k8s_job'
               id: coords
@@ -346,32 +335,10 @@ jobs:
                   ORG_ID: ${{ steps.config.outputs.org_id }}
               run: |
                   set -euo pipefail
-                  ATTEMPTS=5
-                  SLEEP=30
-                  COORDS=""
-                  for i in $(seq 1 "${ATTEMPTS}"); do
-                    HTTP_CODE=$(curl -sS -o /tmp/coords.json -w '%{http_code}' \
-                      "${GATEWAY}/api/projects/${ORG_ID}/connect-gateway" || echo "000")
-                    if [ "${HTTP_CODE}" = "200" ]; then
-                      COORDS=$(cat /tmp/coords.json)
-                      break
-                    fi
-                    if [ "${HTTP_CODE}" = "409" ]; then
-                      # Substrate not ready yet — the per-tenant GKE cluster
-                      # is still provisioning. Normal on a fresh tenant.
-                      echo "::notice::connect-gateway not ready yet (409) for org_id=${ORG_ID} — the per-tenant GKE cluster is still provisioning. Attempt ${i}/${ATTEMPTS}."
-                      if [ "${i}" -lt "${ATTEMPTS}" ]; then sleep "${SLEEP}"; fi
-                      continue
-                    fi
-                    # Anything else (404 stale org_id, 5xx, 000 network) is
-                    # not the provisioning race — fail fast with the body.
-                    echo "::error::Portal connect-gateway lookup for org_id=${ORG_ID} returned HTTP ${HTTP_CODE}. Body: $(head -c 500 /tmp/coords.json 2>/dev/null)"
+                  COORDS=$(curl -sSf "${GATEWAY}/api/projects/${ORG_ID}/connect-gateway") || {
+                    echo "::error::Portal connect-gateway lookup failed for org_id=${ORG_ID}. If this tenant predates the K8s Jobs substrate, provision the BC 2.0 GCP capability before deploying with runner: k8s_job."
                     exit 1
-                  done
-                  if [ -z "${COORDS}" ]; then
-                    echo "::error::connect-gateway still not ready after ${ATTEMPTS} attempts (~$(( (ATTEMPTS - 1) * SLEEP ))s) for org_id=${ORG_ID}. The per-tenant GKE cluster is likely still provisioning (Terraform apply runs ~15-20 min on a fresh tenant). No action needed: the Portal re-dispatches deploy-job automatically once the infra is ready (ENG-898). To deploy sooner, re-run this workflow once the tenant shows ready in the cockpit."
-                    exit 1
-                  fi
+                  }
                   PROJECT_NUMBER=$(jq -r .project_number <<<"${COORDS}")
                   LOCATION=$(jq -r .location <<<"${COORDS}")
                   MEMBERSHIP_ID=$(jq -r .gke_hub_membership_id <<<"${COORDS}")

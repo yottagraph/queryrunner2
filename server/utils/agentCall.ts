@@ -40,6 +40,15 @@ import {
 export interface AgentToolCall {
     name: string;
     args: Record<string, unknown>;
+    /**
+     * The value the tool returned, captured from the matching ADK
+     * `function_response` event. Present once the response is seen.
+     */
+    response?: unknown;
+    /** Epoch ms when the `function_call` event was observed. */
+    calledAt?: number;
+    /** Epoch ms when the matching `function_response` event was observed. */
+    respondedAt?: number;
 }
 
 export interface AgentCallResult {
@@ -244,12 +253,38 @@ async function callAgentEngine(opts: {
     return { text, sessionId, toolCalls, hosting: 'agent_engine' };
 }
 
-/** Collapse a classified event into our running result accumulators. */
-function applyEvent(evt: AdkEvent, acc: { text: string; toolCalls: AgentToolCall[] }): void {
+/**
+ * Collapse a classified event into our running result accumulators.
+ * Exported for unit testing the tool-call ↔ response pairing.
+ */
+export function applyEvent(
+    evt: AdkEvent,
+    acc: { text: string; toolCalls: AgentToolCall[] },
+    now: number = Date.now()
+): void {
     const classified = classifyAdkEvent(evt);
     if (!classified) return;
+    // Prefer the ADK event's own timestamp (epoch seconds) so timing reflects
+    // the agent's clock even if the stream is buffered; fall back to the
+    // server-observed time when the transport omits it.
+    const ts = typeof evt.timestamp === 'number' && evt.timestamp > 0 ? evt.timestamp * 1000 : now;
     if (classified.type === 'function_call') {
-        acc.toolCalls.push({ name: classified.data.name, args: classified.data.args });
+        acc.toolCalls.push({
+            name: classified.data.name,
+            args: classified.data.args,
+            calledAt: ts,
+        });
+    } else if (classified.type === 'function_response') {
+        // Attach the response to the most recent matching call that's still
+        // awaiting one (responses arrive after their calls, in order).
+        for (let i = acc.toolCalls.length - 1; i >= 0; i--) {
+            const tc = acc.toolCalls[i];
+            if (tc.name === classified.data.name && tc.response === undefined) {
+                tc.response = classified.data.response;
+                tc.respondedAt = ts;
+                return;
+            }
+        }
     } else if (classified.type === 'text') {
         acc.text = classified.data.text;
     }

@@ -184,9 +184,19 @@ export default defineNuxtConfig({
         // below is then `agent_engine` and this is unused).
         agentBaseUrl: '',
 
-        // Path to the projected M2M token file (NUXT_M2M_TOKEN_FILE); the
-        // direct in-cluster QS path sends it as the bearer. Empty = proxy path.
-        m2mTokenFile: '',
+        // Explicit QueryRunner agent id override (server-only). When set,
+        // skips portal/tenant-config discovery. For `agent_engine` this is
+        // the Vertex engine_id; for `gke` it's the ADK app name. Set via
+        // `NUXT_QUERY_AGENT_ID`.
+        queryAgentId: '',
+
+        // elemental-query MCP base URL (server-only), used by the on-demand
+        // citations endpoint to reach the MCP server's `/citations` route.
+        // The same URL the agent connects to (ending in `/mcp`); the route is
+        // derived by swapping the `/mcp` suffix for `/citations`. Set via
+        // `NUXT_QUERY_MCP_URL` (e.g. http://127.0.0.1:8080/mcp in local dev).
+        // Empty → citations are unavailable and the UI degrades gracefully.
+        queryMcpUrl: '',
 
         public: {
             qsApiKey: bcYaml.qsApiKey,
@@ -205,9 +215,6 @@ export default defineNuxtConfig({
 
             // Server Configuration
             queryServerAddress: bcYaml.queryServerAddress,
-            // Explicit override to force direct in-cluster QS access; normally
-            // inferred from an in-cluster address (see isQsDirect()).
-            queryServerDirect: false,
 
             // Agent Gateway
             gatewayUrl: bcYaml.gatewayUrl,
@@ -246,6 +253,11 @@ export default defineNuxtConfig({
 
             // User Configuration — bypass Auth0 in dev mode for provisioned projects
             userName: bcYaml.found && process.env.NODE_ENV !== 'production' ? 'dev-user' : '',
+
+            // QueryRunner agent model label — informational, recorded on
+            // each trace for A/B comparison. Keep in sync with the agent's
+            // QUERY_AGENT_MODEL default. Override via NUXT_PUBLIC_QUERY_AGENT_MODEL.
+            queryAgentModel: 'gemini-2.5-flash',
 
             // App Configuration
             versionString: 'release_internal-dev',

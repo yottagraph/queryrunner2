@@ -20,14 +20,14 @@ export default defineEventHandler(async () => {
     const qsApiKey = pub.qsApiKey;
     const serverAddress = pub.queryServerAddress;
 
+    // Prefer the Portal Gateway QS proxy (its X-Api-Key is the only auth a
+    // tenant has); fall back to a direct QS address if one is configured.
+    const useProxy = !!(gatewayUrl && tenantOrgId && qsApiKey);
+
     let baseURL = '';
     const headers: Record<string, string> = {};
 
-    if (isQsDirect()) {
-        // Direct in-cluster — probe the serving address (/status needs no auth).
-        baseURL = serverAddress.replace(/\/$/, '');
-    } else if (gatewayUrl && tenantOrgId && qsApiKey) {
-        // Portal QS proxy.
+    if (useProxy) {
         baseURL = `${gatewayUrl}/api/qs/${tenantOrgId}`;
         headers['X-Api-Key'] = qsApiKey;
     } else if (serverAddress) {
