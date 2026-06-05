@@ -184,6 +184,12 @@ export default defineNuxtConfig({
         // below is then `agent_engine` and this is unused).
         agentBaseUrl: '',
 
+        // Explicit QueryRunner agent id override (server-only). When set,
+        // skips portal/tenant-config discovery. For `agent_engine` this is
+        // the Vertex engine_id; for `gke` it's the ADK app name. Set via
+        // `NUXT_QUERY_AGENT_ID`.
+        queryAgentId: '',
+
         // Path to the projected M2M token file (NUXT_M2M_TOKEN_FILE); the
         // direct in-cluster QS path sends it as the bearer. Empty = proxy path.
         m2mTokenFile: '',
@@ -222,6 +228,11 @@ export default defineNuxtConfig({
             // provisioned with `agent.hosting: gke`. See
             // `.agents/skills/aether/agents.md` § "GKE in-cluster hosting".
             agentHosting: 'agent_engine',
+
+            // QueryRunner agent model label — informational, recorded on
+            // each trace for A/B comparison. Keep in sync with the agent's
+            // QUERY_AGENT_MODEL default. Override via NUXT_PUBLIC_QUERY_AGENT_MODEL.
+            queryAgentModel: 'gemini-2.5-flash',
 
             // BigQuery (BC 2.0 per-tenant data plane) — overridden by
             // NUXT_PUBLIC_BIGQUERY_* env vars on tenants provisioned with
