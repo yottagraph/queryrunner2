@@ -26,6 +26,10 @@ node_modules
 # Vercel project config (created by `vercel link`, unique per user)
 .vercel/
 
+# Workload Identity Federation creds dropped by google-github-actions/auth in CI.
+# Ephemeral, runner-specific; must never be committed.
+gha-creds-*.json
+
 # Broadchurch tenant config (created by /broadchurch_setup, may contain project-specific settings)
 broadchurch.yaml
 
